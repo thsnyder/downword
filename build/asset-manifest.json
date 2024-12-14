@@ -1,0 +1,14 @@
+{
+  "files": {
+    "main.css": "/downword/static/css/main.0ca49436.css",
+    "main.js": "/downword/static/js/main.704ffd78.js",
+    "static/media/downword-logo.png": "/downword/static/media/downword-logo.4bf537eb3a381fa0afe8.png",
+    "index.html": "/downword/index.html",
+    "main.0ca49436.css.map": "/downword/static/css/main.0ca49436.css.map",
+    "main.704ffd78.js.map": "/downword/static/js/main.704ffd78.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.0ca49436.css",
+    "static/js/main.704ffd78.js"
+  ]
+}
