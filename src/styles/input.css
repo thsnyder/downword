@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .game-tile {
+    @apply w-10 h-10 flex items-center justify-center 
+           text-xl font-bold border-r border-b border-base-300
+           bg-base-200 transition-all duration-300;
+  }
+  
+  .game-tile:nth-child(10n+1) {
+    @apply border-l;
+  }
+  
+  .game-tile:nth-child(-n+10) {
+    @apply border-t;
+  }
+  
+  .game-tile:nth-child(10n) {
+    @apply border-r;
+  }
+  
+  .game-tile:nth-child(n+91) {
+    @apply border-b;
+  }
+  
+  .game-tile-active {
+    @apply bg-primary/20 border-primary;
+  }
+
+  .game-tile-locked {
+    @apply bg-success/10 border-success text-success shadow-sm;
+    animation: lockLetter 0.5s ease-out;
+  }
+
+  .letter-bank-tile {
+    @apply btn btn-outline btn-primary w-10 h-10 text-lg font-bold;
+  }
+}
+
+@keyframes lockLetter {
+  0% {
+    transform: scale(1);
+    @apply bg-warning/30 border-warning;
+  }
+  50% {
+    transform: scale(1.1);
+    @apply bg-warning/50 border-warning;
+  }
+  100% {
+    transform: scale(1);
+    @apply bg-success/10 border-success;
+  }
+}
