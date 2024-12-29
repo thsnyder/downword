@@ -24,6 +24,8 @@ function App() {
     reachedGoal: false
   });
   const [showModal, setShowModal] = useState('instructions');
+  const [selectedCell, setSelectedCell] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
 
   // Randomize positions when game starts
   useEffect(() => {
@@ -35,10 +37,18 @@ function App() {
     console.log('Dictionary loaded:', isDictionaryLoaded());
   }, []);
 
+  const checkConnection = (board, start, goal) => {
+    // Implement logic to check if there's a valid path from start to goal
+    // This is a placeholder function; you'll need to implement the actual pathfinding logic
+    return false; // Replace with actual logic
+  };
+
   const handleLetterPlaced = (letter, sourceIndex, rowIndex, colIndex) => {
     setGameState(prev => {
       const newBoard = prev.board.map(row => [...row]);
       newBoard[rowIndex][colIndex] = letter;
+      const connectionStatus = checkConnection(newBoard, startPosition, goalPosition);
+      setIsConnected(connectionStatus);
       return {
         ...prev,
         board: newBoard
@@ -49,10 +59,11 @@ function App() {
   const handleLetterRemoved = (rowIndex, colIndex) => {
     setGameState(prev => {
       const cell = prev.board[rowIndex][colIndex];
-      // Only remove if cell exists
       if (cell) {
         const newBoard = prev.board.map(row => [...row]);
         newBoard[rowIndex][colIndex] = null;
+        const connectionStatus = checkConnection(newBoard, startPosition, goalPosition);
+        setIsConnected(connectionStatus);
         return {
           ...prev,
           board: newBoard
@@ -70,6 +81,26 @@ function App() {
       isGameOver: true
     }));
     setShowModal('gameOver');
+  };
+
+  const handleShare = () => {
+    // Create a board representation with emojis
+    const boardEmoji = gameState.board.map(row =>
+      row.map(cell => cell ? '⬛' : '⬜').join('')
+    ).join('\n');
+
+    const message = `DownWord Score: ${gameState.score}\n\n${boardEmoji}\n\nPlay at: https://thsnyder.github.io/downword/`;
+
+    if (navigator.share) {
+      navigator.share({
+        title: 'DownWord Puzzle',
+        text: message
+      }).catch(console.error);
+    } else {
+      navigator.clipboard.writeText(message)
+        .then(() => alert('Result copied to clipboard!'))
+        .catch(console.error);
+    }
   };
 
   return (
@@ -113,6 +144,8 @@ function App() {
           onLetterRemoved={handleLetterRemoved}
           startPosition={startPosition}
           goalPosition={goalPosition}
+          selectedCell={selectedCell}
+          setSelectedCell={setSelectedCell}
         />
         <LetterBank />
         <WordCheck 
@@ -120,6 +153,7 @@ function App() {
           onWordSubmit={handleWordSubmit}
           goalPosition={goalPosition}
           startPosition={startPosition}
+          isConnected={isConnected}
         />
       </main>
 
@@ -129,6 +163,7 @@ function App() {
           score={gameState.score}
           words={gameState.words}
           onClose={() => setShowModal(null)}
+          onShare={handleShare}
         />
       )}
     </div>

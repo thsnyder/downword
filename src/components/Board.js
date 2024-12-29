@@ -5,7 +5,7 @@ const BOARD_SIZE = 10;
 // Function to get random column position
 const getRandomColumn = () => Math.floor(Math.random() * BOARD_SIZE);
 
-function Board({ board, highlightedCells = [], onLetterPlaced, onLetterRemoved, startPosition, goalPosition }) {
+function Board({ board, highlightedCells = [], onLetterPlaced, onLetterRemoved, startPosition, goalPosition, selectedCell, setSelectedCell }) {
   const [selectedCells, setSelectedCells] = useState([]);
   const [showHints, setShowHints] = useState(true);
 
@@ -58,6 +58,11 @@ function Board({ board, highlightedCells = [], onLetterPlaced, onLetterRemoved, 
   const getCellClassName = (rowIndex, colIndex) => {
     let baseClasses = "w-7 h-7 sm:w-8 sm:h-8 text-sm sm:text-base font-bold rounded flex items-center justify-center select-none transition-all border-2 bg-base-300 hover:bg-base-200 font-['Source_Serif_4'] tracking-wide";
     
+    // Add selected cell highlighting
+    if (selectedCell && selectedCell.row === rowIndex && selectedCell.col === colIndex) {
+      baseClasses += " border-primary border-2 bg-primary/10 animate-pulse";
+    }
+    
     // Start position (neon green)
     if (rowIndex === startPosition.row && colIndex === startPosition.col) {
       return `${baseClasses} bg-success/20 border-success text-success-content shadow-lg shadow-success/50`;
@@ -95,15 +100,15 @@ function Board({ board, highlightedCells = [], onLetterPlaced, onLetterRemoved, 
   const handleCellClick = (rowIndex, colIndex) => {
     const cell = board[rowIndex][colIndex];
     
-    // Don't do anything for empty cells
-    if (!cell) {
-      return;
-    }
-    
-    // If the cell is not locked, remove it
-    if (typeof cell !== 'object' || !cell.locked) {
-      onLetterRemoved(rowIndex, colIndex);
-      return;
+    if (cell) {
+      // If cell has a letter, remove it
+      if (typeof cell !== 'object' || !cell.locked) {
+        onLetterRemoved(rowIndex, colIndex);
+      }
+      setSelectedCell(null);
+    } else {
+      // If cell is empty, select it
+      setSelectedCell({ row: rowIndex, col: colIndex });
     }
   };
 
@@ -153,6 +158,9 @@ function Board({ board, highlightedCells = [], onLetterPlaced, onLetterRemoved, 
                 onDrop={(e) => handleDrop(e, rowIndex, colIndex)}
                 draggable={cell && typeof cell !== 'object'}
                 onDragStart={(e) => handleDragStart(e, rowIndex, colIndex)}
+                data-cell="true"
+                data-row={rowIndex}
+                data-col={colIndex}
               >
                 {getCellContent(cell)}
               </button>

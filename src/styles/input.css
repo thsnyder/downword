@@ -37,6 +37,11 @@
   .letter-bank-tile {
     @apply btn btn-outline btn-primary w-10 h-10 text-lg font-bold;
   }
+
+  /* Add class to prevent scrolling during touch drag */
+  .touch-dragging {
+    @apply fixed w-full h-full overflow-hidden touch-none;
+  }
 }
 
 @keyframes lockLetter {

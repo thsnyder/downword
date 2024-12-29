@@ -21,11 +21,13 @@ function App() {
   const [showInstructions, setShowInstructions] = useState(true);
   const [invalidCells, setInvalidCells] = useState([]);
   const [availableLetters, setAvailableLetters] = useState(getRandomLetters());
+  const [selectedCell, setSelectedCell] = useState(null);
 
   const handleLetterPlaced = (row, col, letter) => {
     const newBoard = [...board];
     newBoard[row][col] = letter;
     setBoard(newBoard);
+    setSelectedCell(null);
   };
 
   const handleLetterRemoved = (row, col) => {
@@ -50,6 +52,27 @@ function App() {
     setIsGameOver(true);
   };
 
+  const getEmojiBoard = () => {
+    return board.map(row =>
+      row.map(cell => {
+        if (!cell) return '⬜'; // White square for empty cells
+        if (cell === 'goal') return '🟩'; // Green square for goal
+        if (cell === 'start') return '🟥'; // Red square for start
+        return '⬛'; // Grey square for filled cells
+      }).join('')
+    ).join('\n');
+  };
+
+  const handleShare = () => {
+    const emojiBoard = getEmojiBoard();
+    const message = `I just completed the game!\n${emojiBoard}`;
+    navigator.clipboard.writeText(message).then(() => {
+      alert('Game board copied to clipboard!');
+    }, (err) => {
+      console.error('Could not copy text: ', err);
+    });
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <Header />
@@ -61,11 +84,15 @@ function App() {
           startPosition={startPosition}
           goalPosition={goalPosition}
           highlightedCells={invalidCells}
+          selectedCell={selectedCell}
+          setSelectedCell={setSelectedCell}
         />
         <LetterBank
           letters={availableLetters}
           onLetterDragged={handleLetterDragged}
           onLetterDropped={handleLetterDropped}
+          selectedCell={selectedCell}
+          onLetterPlaced={handleLetterPlaced}
         />
         <WordCheck
           board={board}
@@ -113,6 +140,7 @@ function App() {
                 ))}
               </ul>
             </div>
+            <button onClick={handleShare} className="btn btn-primary mt-4">Share</button>
           </div>
         </Modal>
       )}

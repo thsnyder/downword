@@ -7,10 +7,36 @@ const KEYBOARD_LAYOUT = [
   ['Z', 'X', 'C', 'V', 'B', 'N', 'M']
 ];
 
-function LetterBank() {
+function LetterBank({ selectedCell, onLetterPlaced }) {
   const [availableLetters] = React.useState(
-    getUniqueRandomLetters(16)  // Get 16 unique letters on initial render
+    getUniqueRandomLetters(16)
   );
+  const [draggedLetter, setDraggedLetter] = React.useState(null);
+
+  // Use ref to store button elements
+  const buttonRefs = React.useRef({});
+
+  React.useEffect(() => {
+    // Add non-passive touch event listeners to all letter buttons
+    Object.values(buttonRefs.current).forEach(button => {
+      if (button) {
+        button.addEventListener('touchstart', handleTouchStart, { passive: false });
+        button.addEventListener('touchmove', handleTouchMove, { passive: false });
+        button.addEventListener('touchend', handleTouchEnd);
+      }
+    });
+
+    // Cleanup
+    return () => {
+      Object.values(buttonRefs.current).forEach(button => {
+        if (button) {
+          button.removeEventListener('touchstart', handleTouchStart);
+          button.removeEventListener('touchmove', handleTouchMove);
+          button.removeEventListener('touchend', handleTouchEnd);
+        }
+      });
+    };
+  }, []); // Empty dependency array since we only need to set up once
 
   const handleDragStart = (e, letter, index) => {
     if (!availableLetters.includes(letter)) return; // Prevent dragging unavailable letters
@@ -20,6 +46,72 @@ function LetterBank() {
       sourceIndex: index,
       source: 'letterBank'
     }));
+  };
+
+  const handleTouchStart = (e) => {
+    const button = e.currentTarget;
+    const letter = button.dataset.letter;
+    const index = parseInt(button.dataset.index);
+
+    if (!availableLetters.includes(letter)) return;
+    
+    e.preventDefault();
+    document.body.classList.add('touch-dragging');
+    setDraggedLetter({ letter, index });
+  };
+
+  const handleTouchMove = (e) => {
+    if (!draggedLetter) return;
+    e.preventDefault();
+    
+    // Get touch coordinates
+    const touch = e.touches[0];
+    
+    // Find the element under the touch point
+    const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+    
+    // Add visual feedback if needed
+    if (elemBelow) {
+      elemBelow.style.opacity = '0.7';
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (!draggedLetter) return;
+    
+    const touch = e.changedTouches[0];
+    const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+    
+    // Find the closest board cell
+    const boardCell = elemBelow?.closest('[data-cell]');
+    
+    if (boardCell) {
+      const row = parseInt(boardCell.dataset.row);
+      const col = parseInt(boardCell.dataset.col);
+      
+      // Simulate drop event
+      const dropEvent = new Event('drop');
+      dropEvent.dataTransfer = {
+        getData: () => JSON.stringify({
+          letter: draggedLetter.letter,
+          sourceIndex: draggedLetter.index,
+          source: 'letterBank'
+        })
+      };
+      
+      boardCell.dispatchEvent(dropEvent);
+    }
+    
+    document.body.classList.remove('touch-dragging');
+    setDraggedLetter(null);
+  };
+
+  const handleLetterClick = (letter, index) => {
+    if (!availableLetters.includes(letter)) return;
+    
+    if (selectedCell) {
+      onLetterPlaced(selectedCell.row, selectedCell.col, letter);
+    }
   };
 
   const getLetterClassName = (letter) => {
@@ -45,9 +137,13 @@ function LetterBank() {
             {row.map((letter, colIndex) => (
               <button
                 key={`${rowIndex}-${colIndex}`}
+                ref={el => buttonRefs.current[`${rowIndex}-${colIndex}`] = el}
                 className={getLetterClassName(letter)}
                 draggable={availableLetters.includes(letter)}
                 onDragStart={(e) => handleDragStart(e, letter, colIndex)}
+                onClick={() => handleLetterClick(letter, colIndex)}
+                data-letter={letter}
+                data-index={colIndex}
               >
                 {letter}
               </button>

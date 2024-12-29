@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { isValidWord, getWordScore } from '../utils/dictionary';
 
-function WordCheck({ board, onWordSubmit, goalPosition, startPosition, onInvalidCells }) {
+function WordCheck({ board, onWordSubmit, goalPosition, startPosition, isConnected }) {
   const [canSubmit, setCanSubmit] = useState(false);
   const [invalidCells, setLocalInvalidCells] = useState([]);
   const [errorMessage, setErrorMessage] = useState('');
@@ -93,134 +93,81 @@ function WordCheck({ board, onWordSubmit, goalPosition, startPosition, onInvalid
   };
 
   const findWords = (board, pathCells) => {
-    const words = new Set(); // Use Set to avoid duplicates
-    
-    // Helper to check if cells form a horizontal line
+    const words = new Set();
+
     const isHorizontalLine = (cell1, cell2) => {
       return cell1.row === cell2.row && Math.abs(cell1.col - cell2.col) === 1;
     };
 
-    // Helper to check if cells form a vertical line
     const isVerticalLine = (cell1, cell2) => {
       return cell1.col === cell2.col && Math.abs(cell1.row - cell2.row) === 1;
     };
 
-    // Group cells by rows and columns
-    const rowGroups = new Map(); // row -> cells
-    const colGroups = new Map(); // col -> cells
+    const rowGroups = new Map();
+    const colGroups = new Map();
 
-    // Sort cells into row and column groups
     pathCells.forEach(cell => {
-      // Add to row group
       if (!rowGroups.has(cell.row)) {
         rowGroups.set(cell.row, []);
       }
       rowGroups.get(cell.row).push(cell);
 
-      // Add to column group
       if (!colGroups.has(cell.col)) {
         colGroups.set(cell.col, []);
       }
       colGroups.get(cell.col).push(cell);
     });
 
-    // Process horizontal words (by row)
+    const processSequence = (sequence) => {
+      const word = sequence.map(cell => {
+        const letter = board[cell.row][cell.col];
+        return typeof letter === 'object' ? letter.letter : letter;
+      }).join('');
+
+      if (isValidWord(word)) {
+        words.add(JSON.stringify({ 
+          word, 
+          cells: [...sequence],
+          score: getWordScore(word)
+        }));
+      }
+    };
+
     rowGroups.forEach(cells => {
-      // Sort cells by column
       cells.sort((a, b) => a.col - b.col);
-      
-      // Find continuous sequences
       let sequence = [cells[0]];
-      
+
       for (let i = 1; i < cells.length; i++) {
         if (isHorizontalLine(cells[i-1], cells[i])) {
           sequence.push(cells[i]);
         } else {
-          // Process the current sequence if it's long enough
           if (sequence.length >= 2) {
-            const word = sequence.map(cell => {
-              const letter = board[cell.row][cell.col];
-              return typeof letter === 'object' ? letter.letter : letter;
-            }).join('');
-            
-            // Only add if it's a valid word
-            if (isValidWord(word)) {
-              words.add(JSON.stringify({ 
-                word, 
-                cells: [...sequence],
-                score: getWordScore(word)
-              }));
-            }
+            processSequence(sequence);
           }
           sequence = [cells[i]];
         }
       }
-      
-      // Process the last sequence
       if (sequence.length >= 2) {
-        const word = sequence.map(cell => {
-          const letter = board[cell.row][cell.col];
-          return typeof letter === 'object' ? letter.letter : letter;
-        }).join('');
-        
-        // Only add if it's a valid word
-        if (isValidWord(word)) {
-          words.add(JSON.stringify({ 
-            word, 
-            cells: [...sequence],
-            score: getWordScore(word)
-          }));
-        }
+        processSequence(sequence);
       }
     });
 
-    // Process vertical words (by column)
     colGroups.forEach(cells => {
-      // Sort cells by row
       cells.sort((a, b) => a.row - b.row);
-      
-      // Find continuous sequences
       let sequence = [cells[0]];
-      
+
       for (let i = 1; i < cells.length; i++) {
         if (isVerticalLine(cells[i-1], cells[i])) {
           sequence.push(cells[i]);
         } else {
-          // Process the current sequence if it's long enough
           if (sequence.length >= 2) {
-            const word = sequence.map(cell => {
-              const letter = board[cell.row][cell.col];
-              return typeof letter === 'object' ? letter.letter : letter;
-            }).join('');
-            
-            // Only add if it's a valid word
-            if (isValidWord(word)) {
-              words.add(JSON.stringify({ 
-                word, 
-                cells: [...sequence],
-                score: getWordScore(word)
-              }));
-            }
+            processSequence(sequence);
           }
           sequence = [cells[i]];
         }
       }
-      
-      // Process the last sequence
       if (sequence.length >= 2) {
-        const word = sequence.map(cell => {
-          const letter = board[cell.row][cell.col];
-          return typeof letter === 'object' ? letter.letter : letter;
-        }).join('');
-        
-        // Only add if it's a valid word
-        if (isValidWord(word)) {
-          words.add(JSON.stringify({ 
-            word, 
-            cells: [...sequence],
-            score: getWordScore(word)
-          }));
-        }
+        processSequence(sequence);
       }
     });
 
@@ -365,23 +312,17 @@ function WordCheck({ board, onWordSubmit, goalPosition, startPosition, onInvalid
     const pathCells = getPathCells(board);
     if (!pathCells) return;
 
-    // First check if we have any valid words
     const foundWords = findWords(board, pathCells);
     if (foundWords.length === 0) {
-      // If no valid words found, mark all cells as invalid
       const invalidCellsToHighlight = pathCells.map(cell => ({
         row: cell.row,
         col: cell.col
       }));
       setLocalInvalidCells(invalidCellsToHighlight);
-      if (typeof onInvalidCells === 'function') {
-        onInvalidCells(invalidCellsToHighlight);
-      }
       setErrorMessage("No valid words found in path");
       return;
     }
 
-    // Then check if all cells are part of valid words
     const { invalidCells, invalidWords } = validatePath(board, pathCells);
     if (invalidCells.length > 0) {
       const invalidCellsToHighlight = invalidCells.map(cell => ({
@@ -389,20 +330,13 @@ function WordCheck({ board, onWordSubmit, goalPosition, startPosition, onInvalid
         col: cell.col
       }));
       setLocalInvalidCells(invalidCellsToHighlight);
-      if (typeof onInvalidCells === 'function') {
-        onInvalidCells(invalidCellsToHighlight);
-      }
       setErrorMessage(`Invalid word${invalidWords.length > 1 ? 's' : ''}: ${invalidWords.join(', ')}`);
       return;
     }
 
-    // All cells are part of valid words, complete the game
     const totalScore = foundWords.reduce((sum, { score }) => sum + score, 0);
     setLocalInvalidCells([]);
     setErrorMessage('');
-    if (typeof onInvalidCells === 'function') {
-      onInvalidCells([]);
-    }
     setIsGameComplete(true);
     onWordSubmit('', totalScore, [], foundWords);
   };
@@ -416,9 +350,6 @@ function WordCheck({ board, onWordSubmit, goalPosition, startPosition, onInvalid
     setCanSubmit(hasPathToGoal(board));
     // Clear invalid cells when board changes
     setLocalInvalidCells([]);
-    if (typeof onInvalidCells === 'function') {
-      onInvalidCells([]);
-    }
     // Reset game complete state when board changes
     setIsGameComplete(false);
   }, [board, goalPosition, startPosition]);

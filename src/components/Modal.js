@@ -1,7 +1,7 @@
 import React from 'react';
 import { getWordScore } from '../utils/dictionary';
 
-function Modal({ type, score, words = [], onClose }) {
+function Modal({ type, score, words = [], onClose, onShare }) {
   const getModalContent = () => {
     switch (type) {
       case 'instructions':
@@ -24,6 +24,14 @@ function Modal({ type, score, words = [], onClose }) {
                 <li>+5 bonus for 7+ letter words</li>
                 <li>+8 bonus for 9+ letter words</li>
               </ul>
+              <div className="modal-action">
+                <button 
+                  className="btn btn-primary w-full"
+                  onClick={onClose}
+                >
+                  Play
+                </button>
+              </div>
             </div>
           )
         };
@@ -70,12 +78,22 @@ function Modal({ type, score, words = [], onClose }) {
                 </ul>
               </div>
 
-              <button 
-                className="btn btn-primary w-full"
-                onClick={() => window.location.reload()}
-              >
-                Play Again
-              </button>
+              <div className="modal-action">
+                <div className="w-full grid grid-cols-2 gap-2">
+                  <button 
+                    className="btn btn-primary"
+                    onClick={() => window.location.reload()}
+                  >
+                    Play Again
+                  </button>
+                  <button 
+                    className="btn btn-secondary"
+                    onClick={onShare}
+                  >
+                    Share
+                  </button>
+                </div>
+              </div>
             </div>
           )
         };
@@ -89,13 +107,16 @@ function Modal({ type, score, words = [], onClose }) {
   return (
     <div className="modal modal-open">
       <div className="modal-box relative">
-        <button
-          className="btn btn-sm btn-circle absolute right-2 top-2"
-          onClick={onClose}
-        >
-          ✕
-        </button>
-        <h3 className="font-bold text-lg mb-4">{title}</h3>
+        {type !== 'instructions' && (
+          <button 
+            className="btn btn-sm btn-circle absolute right-2 top-2"
+            onClick={onClose}
+          >
+            ✕
+          </button>
+        )}
+        
+        <h3 className="font-bold text-lg mb-4 pr-8">{title}</h3>
         {content}
       </div>
     </div>
