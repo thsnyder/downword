@@ -105,23 +105,30 @@ function App() {
 
   return (
     <div className="min-h-screen p-4">
-      <header className="navbar bg-base-100 rounded-box shadow-lg mb-8">
-        <div className="flex-1">
+      <header className="navbar bg-base-100 rounded-box shadow-lg mb-8 flex-col sm:flex-row gap-2 sm:gap-0 p-4">
+        <div className="flex w-full sm:w-auto justify-between sm:flex-1">
           <img 
             src={logo} 
             alt="DownWord" 
-            className="h-10 sm:h-12 w-auto"
+            className="h-8 sm:h-12 w-auto"
           />
+          
+          <button 
+            className="btn btn-ghost btn-sm sm:hidden"
+            onClick={() => setShowModal('instructions')}
+          >
+            ?
+          </button>
         </div>
         
-        {/* Center title - desktop only */}
-        <div className="flex-1 hidden sm:flex justify-center">
-          <h1 className="text-4xl font-['Source_Serif_4'] font-bold tracking-wide text-primary">
+        {/* Title - shown on all screens */}
+        <div className="flex-1 flex justify-center">
+          <h1 className="text-3xl sm:text-4xl font-['Source_Serif_4'] font-bold tracking-wide text-primary">
             DownWord
           </h1>
         </div>
         
-        <div className="flex-1 flex justify-end">
+        <div className="hidden sm:flex flex-1 justify-end">
           <button 
             className="btn btn-ghost"
             onClick={() => setShowModal('instructions')}
@@ -131,7 +138,7 @@ function App() {
         </div>
       </header>
       
-      <main className="max-w-4xl mx-auto">
+      <main className="max-w-4xl mx-auto px-2 sm:px-4">
         <ScorePanel 
           board={gameState.board}
           startPosition={startPosition}
