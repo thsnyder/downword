@@ -6,8 +6,8 @@ const BOARD_SIZE = 10;
 const getRandomColumn = () => Math.floor(Math.random() * BOARD_SIZE);
 
 function Board({ board, highlightedCells = [], onLetterPlaced, onLetterRemoved, startPosition, goalPosition, selectedCell, setSelectedCell }) {
-  const [selectedCells, setSelectedCells] = useState([]);
   const [showHints, setShowHints] = useState(true);
+  const [justPlaced, setJustPlaced] = useState(null);
 
   // Check if any letters have been placed
   useEffect(() => {
@@ -21,74 +21,43 @@ function Board({ board, highlightedCells = [], onLetterPlaced, onLetterRemoved, 
     }
   }, [board, showHints]);
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (e, rowIndex, colIndex) => {
-    e.preventDefault();
-    
-    try {
-      const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-      
-      if (data.source === 'letterBank' && !board[rowIndex][colIndex]) {
-        onLetterPlaced(data.letter, data.sourceIndex, rowIndex, colIndex);
-      } else if (data.source === 'board') {
-        onLetterPlaced(data.letter, data.sourceIndex, rowIndex, colIndex);
-        onLetterRemoved(data.sourceRow, data.sourceCol);
-      }
-    } catch (error) {
-      console.error('Error dropping letter:', error);
-    }
-  };
-
-  const handleDragStart = (e, rowIndex, colIndex) => {
-    const cell = board[rowIndex][colIndex];
-    if (cell && typeof cell !== 'object') {
-      e.dataTransfer.setData('text/plain', JSON.stringify({
-        letter: cell,
-        sourceIndex: null,
-        source: 'board',
-        sourceRow: rowIndex,
-        sourceCol: colIndex
-      }));
-    }
-  };
-
   const getCellClassName = (rowIndex, colIndex) => {
-    let baseClasses = "w-7 h-7 sm:w-8 sm:h-8 text-sm sm:text-base font-bold rounded flex items-center justify-center select-none transition-all border-2 bg-base-300 hover:bg-base-200 font-['Source_Serif_4'] tracking-wide";
+    // Clean card-like tile base - mobile-first sizing (min 44px for touch)
+    let baseClasses = "w-11 h-11 sm:w-10 sm:h-10 md:w-12 md:h-12 text-lg sm:text-xl md:text-2xl font-bold rounded-xl flex items-center justify-center select-none transition-all duration-150 font-['Source_Serif_4'] cursor-pointer";
     
-    // Add selected cell highlighting
+    // Add selected cell highlighting - clean and clear
     if (selectedCell && selectedCell.row === rowIndex && selectedCell.col === colIndex) {
-      baseClasses += " border-primary border-2 bg-primary/10 animate-pulse";
+      return `${baseClasses} bg-primary text-primary-content border-2 border-primary shadow-lg shadow-primary/30 ring-2 ring-primary/20 scale-105`;
     }
     
-    // Start position (neon green)
+    // Start position - distinct blue
     if (rowIndex === startPosition.row && colIndex === startPosition.col) {
-      return `${baseClasses} bg-success/20 border-success text-success-content shadow-lg shadow-success/50`;
+      return `${baseClasses} bg-blue-500 text-white border-2 border-blue-600 shadow-md font-extrabold`;
     }
     
-    // Goal position (neon pink)
+    // Goal position - distinct green
     if (rowIndex === goalPosition.row && colIndex === goalPosition.col) {
-      return `${baseClasses} bg-secondary/20 border-secondary text-secondary-content shadow-lg shadow-secondary/50`;
+      return `${baseClasses} bg-green-500 text-white border-2 border-green-600 shadow-md font-extrabold`;
     }
     
     // Get cell content
     const cell = board[rowIndex][colIndex];
     
-    // Invalid word cells (red)
+    // Invalid word cells - clear error state
     if (highlightedCells.some(c => c.row === rowIndex && c.col === colIndex)) {
-      return `${baseClasses} bg-error/30 border-error text-error-content shadow-lg shadow-error/50 border-2 animate-pulse`;
+      return `${baseClasses} bg-red-100 dark:bg-red-900/30 border-2 border-red-400 text-red-700 dark:text-red-300 shadow-sm animate-pulse`;
     }
     
-    // Empty cell hover effect
+    // Empty cell - clean, subtle, tappable
     if (!cell) {
-      baseClasses += " border-base-content/20 hover:border-base-content/40";
+      return `${baseClasses} bg-base-200 dark:bg-base-300 border-2 border-base-300 dark:border-base-400 text-base-content/30 hover:bg-base-300 dark:hover:bg-base-400 hover:border-primary/30 active:scale-95`;
     } else {
-      baseClasses += " border-base-content/40 shadow-sm";
+      // Cell with letter - elevated card with high contrast
+      const wasJustPlaced = justPlaced === `${rowIndex}-${colIndex}`;
+      return `${baseClasses} bg-white dark:bg-base-100 border-2 border-base-300 dark:border-base-400 text-base-content shadow-md hover:shadow-lg active:scale-95 font-extrabold ${
+        wasJustPlaced ? 'animate-pulse scale-110' : ''
+      }`;
     }
-    
-    return baseClasses;
   };
 
   const getCellContent = (cell) => {
@@ -107,43 +76,57 @@ function Board({ board, highlightedCells = [], onLetterPlaced, onLetterRemoved, 
       }
       setSelectedCell(null);
     } else {
-      // If cell is empty, select it
-      setSelectedCell({ row: rowIndex, col: colIndex });
+      // If cell is empty, toggle selection
+      if (selectedCell && selectedCell.row === rowIndex && selectedCell.col === colIndex) {
+        // Deselect if clicking the same cell
+        setSelectedCell(null);
+      } else {
+        // Select the cell
+        setSelectedCell({ row: rowIndex, col: colIndex });
+      }
     }
   };
 
+  // Watch for new letter placements to trigger animation
+  useEffect(() => {
+    if (selectedCell && board[selectedCell.row] && board[selectedCell.row][selectedCell.col]) {
+      setJustPlaced(`${selectedCell.row}-${selectedCell.col}`);
+      setTimeout(() => setJustPlaced(null), 300);
+    }
+  }, [board, selectedCell]);
+
   return (
-    <div className="card bg-base-100 shadow-lg shadow-base-content/5 p-2 sm:p-4">
-      <div className="mx-auto max-w-[400px]">
-        <div className="grid gap-0.5 sm:gap-1 relative" style={{ gridTemplateColumns: `repeat(${BOARD_SIZE}, minmax(0, 1fr))` }}>
+    <div className="card bg-base-100 shadow-lg border border-base-300 p-4 sm:p-5 md:p-6 rounded-2xl">
+      <div className="mx-auto w-full max-w-[100vw] sm:max-w-md md:max-w-lg">
+        <div className="grid gap-1.5 sm:gap-2 relative" style={{ gridTemplateColumns: `repeat(${BOARD_SIZE}, minmax(0, 1fr))` }}>
           {/* Start hint toast */}
           {showHints && (
             <>
               <div 
-                className="absolute text-xs bg-success text-success-content px-2 py-1 rounded shadow-lg shadow-success/20 font-semibold"
+                className="absolute text-xs bg-blue-500 text-white px-3 py-1.5 rounded-lg shadow-md font-semibold"
                 style={{ 
                   left: `${startPosition.col * (100/BOARD_SIZE)}%`, 
                   bottom: '100%',
                   transform: 'translateX(-25%)',
-                  marginBottom: '4px',
+                  marginBottom: '6px',
                   whiteSpace: 'nowrap'
                 }}
               >
-                Start here ↓
+                Start ↓
               </div>
               
               {/* Goal hint toast */}
               <div 
-                className="absolute text-xs bg-secondary text-secondary-content px-2 py-1 rounded shadow-lg shadow-secondary/20 font-semibold"
+                className="absolute text-xs bg-green-500 text-white px-3 py-1.5 rounded-lg shadow-md font-semibold"
                 style={{ 
                   left: `${goalPosition.col * (100/BOARD_SIZE)}%`, 
                   top: '100%',
                   transform: 'translateX(-25%)',
-                  marginTop: '4px',
+                  marginTop: '6px',
                   whiteSpace: 'nowrap'
                 }}
               >
-                ↑ Get to here
+                ↑ Goal
               </div>
             </>
           )}
@@ -153,11 +136,10 @@ function Board({ board, highlightedCells = [], onLetterPlaced, onLetterRemoved, 
               <button
                 key={`${rowIndex}-${colIndex}`}
                 className={getCellClassName(rowIndex, colIndex)}
-                onClick={() => handleCellClick(rowIndex, colIndex)}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, rowIndex, colIndex)}
-                draggable={cell && typeof cell !== 'object'}
-                onDragStart={(e) => handleDragStart(e, rowIndex, colIndex)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleCellClick(rowIndex, colIndex);
+                }}
                 data-cell="true"
                 data-row={rowIndex}
                 data-col={colIndex}

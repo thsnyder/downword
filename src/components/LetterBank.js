@@ -11,148 +11,75 @@ function LetterBank({ selectedCell, onLetterPlaced }) {
   const [availableLetters] = React.useState(
     getUniqueRandomLetters(16)
   );
-  const [draggedLetter, setDraggedLetter] = React.useState(null);
+  const [justPlaced, setJustPlaced] = React.useState(null);
 
-  // Use ref to store button elements
-  const buttonRefs = React.useRef({});
-
-  React.useEffect(() => {
-    // Add non-passive touch event listeners to all letter buttons
-    Object.values(buttonRefs.current).forEach(button => {
-      if (button) {
-        button.addEventListener('touchstart', handleTouchStart, { passive: false });
-        button.addEventListener('touchmove', handleTouchMove, { passive: false });
-        button.addEventListener('touchend', handleTouchEnd);
-      }
-    });
-
-    // Cleanup
-    return () => {
-      Object.values(buttonRefs.current).forEach(button => {
-        if (button) {
-          button.removeEventListener('touchstart', handleTouchStart);
-          button.removeEventListener('touchmove', handleTouchMove);
-          button.removeEventListener('touchend', handleTouchEnd);
-        }
-      });
-    };
-  }, []); // Empty dependency array since we only need to set up once
-
-  const handleDragStart = (e, letter, index) => {
-    if (!availableLetters.includes(letter)) return; // Prevent dragging unavailable letters
-    
-    e.dataTransfer.setData('text/plain', JSON.stringify({
-      letter,
-      sourceIndex: index,
-      source: 'letterBank'
-    }));
-  };
-
-  const handleTouchStart = (e) => {
-    const button = e.currentTarget;
-    const letter = button.dataset.letter;
-    const index = parseInt(button.dataset.index);
-
+  const handleLetterClick = (letter) => {
+    // Only allow placing if a cell is selected and letter is available
+    if (!selectedCell) return;
     if (!availableLetters.includes(letter)) return;
-    
-    e.preventDefault();
-    document.body.classList.add('touch-dragging');
-    setDraggedLetter({ letter, index });
-  };
 
-  const handleTouchMove = (e) => {
-    if (!draggedLetter) return;
-    e.preventDefault();
+    // Place the letter in the selected cell
+    onLetterPlaced(letter, null, selectedCell.row, selectedCell.col);
     
-    // Get touch coordinates
-    const touch = e.touches[0];
-    
-    // Find the element under the touch point
-    const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-    
-    // Add visual feedback if needed
-    if (elemBelow) {
-      elemBelow.style.opacity = '0.7';
-    }
-  };
-
-  const handleTouchEnd = (e) => {
-    if (!draggedLetter) return;
-    
-    const touch = e.changedTouches[0];
-    const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-    
-    // Find the closest board cell
-    const boardCell = elemBelow?.closest('[data-cell]');
-    
-    if (boardCell) {
-      const row = parseInt(boardCell.dataset.row);
-      const col = parseInt(boardCell.dataset.col);
-      
-      // Simulate drop event
-      const dropEvent = new Event('drop');
-      dropEvent.dataTransfer = {
-        getData: () => JSON.stringify({
-          letter: draggedLetter.letter,
-          sourceIndex: draggedLetter.index,
-          source: 'letterBank'
-        })
-      };
-      
-      boardCell.dispatchEvent(dropEvent);
-    }
-    
-    document.body.classList.remove('touch-dragging');
-    setDraggedLetter(null);
-  };
-
-  const handleLetterClick = (letter, index) => {
-    if (!availableLetters.includes(letter)) return;
-    
-    if (selectedCell) {
-      onLetterPlaced(selectedCell.row, selectedCell.col, letter);
-    }
-  };
-
-  const getLetterClassName = (letter) => {
-    let baseClasses = "w-8 h-8 sm:w-12 sm:h-12 text-sm sm:text-base font-bold rounded-lg flex items-center justify-center select-none transition-all bg-base-300 border-2 font-['Source_Serif_4'] tracking-wide";
-    
-    if (!availableLetters.includes(letter)) {
-      baseClasses += " opacity-30 cursor-not-allowed hover:scale-100 active:scale-100 border-base-content/20";
-    } else {
-      baseClasses += " cursor-grab active:cursor-grabbing hover:scale-105 active:scale-95 shadow-md hover:shadow-lg border-accent text-accent-content bg-accent shadow-accent/30 hover:shadow-accent/50";
-    }
-    return baseClasses;
+    // Trigger placement animation
+    setJustPlaced(letter);
+    setTimeout(() => setJustPlaced(null), 300);
   };
 
   return (
-    <div className="card bg-base-100 shadow-lg shadow-base-content/5 mt-4 p-2 sm:p-4">
-      <div className="flex flex-col items-center gap-1 sm:gap-2">
+    <div className="card bg-base-100 shadow-lg border border-base-300 p-4 sm:p-5 mt-4 rounded-2xl">
+      <div className="flex flex-col gap-2.5 sm:gap-3 items-center">
         {KEYBOARD_LAYOUT.map((row, rowIndex) => (
           <div 
             key={rowIndex} 
-            className="flex gap-0.5 sm:gap-1 justify-center" 
-            style={{ paddingLeft: `${rowIndex * 10}px` }}
+            className="flex gap-2 sm:gap-2.5 justify-center"
+            style={{ paddingLeft: rowIndex > 0 ? `${rowIndex * 12}px` : '0' }}
           >
-            {row.map((letter, colIndex) => (
-              <button
-                key={`${rowIndex}-${colIndex}`}
-                ref={el => buttonRefs.current[`${rowIndex}-${colIndex}`] = el}
-                className={getLetterClassName(letter)}
-                draggable={availableLetters.includes(letter)}
-                onDragStart={(e) => handleDragStart(e, letter, colIndex)}
-                onClick={() => handleLetterClick(letter, colIndex)}
-                data-letter={letter}
-                data-index={colIndex}
-              >
-                {letter}
-              </button>
-            ))}
+            {row.map((letter) => {
+              const isAvailable = availableLetters.includes(letter);
+              const canPlace = isAvailable && selectedCell !== null;
+              const wasJustPlaced = justPlaced === letter;
+              
+              return (
+                <button
+                  key={letter}
+                  className={`letter-bank-tile transition-all duration-150 ${
+                    !isAvailable 
+                      ? 'opacity-25 cursor-not-allowed bg-base-200 text-base-content/30' 
+                      : canPlace
+                      ? wasJustPlaced
+                        ? 'bg-primary text-primary-content shadow-lg scale-110 animate-pulse'
+                        : 'bg-primary text-primary-content shadow-md hover:shadow-lg hover:scale-105 active:scale-95'
+                      : wasJustPlaced
+                        ? 'bg-base-300 text-base-content shadow-md scale-110'
+                        : 'bg-base-200 text-base-content shadow-sm hover:bg-base-300 hover:shadow-md active:scale-95'
+                  }`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleLetterClick(letter);
+                  }}
+                  disabled={!isAvailable || !selectedCell}
+                  aria-label={`Place letter ${letter}`}
+                >
+                  <span className="font-bold text-lg sm:text-xl">{letter}</span>
+                </button>
+              );
+            })}
           </div>
         ))}
+        {!selectedCell && (
+          <p className="text-xs sm:text-sm text-base-content/60 mt-3 text-center font-medium px-4 py-2">
+            Tap a board cell, then tap a letter to place it
+          </p>
+        )}
+        {selectedCell && (
+          <p className="text-xs sm:text-sm text-primary font-semibold mt-2 text-center bg-primary/10 px-4 py-2 rounded-lg">
+            Cell selected — choose a letter
+          </p>
+        )}
       </div>
     </div>
   );
 }
 
-export default LetterBank; 
+export default LetterBank;

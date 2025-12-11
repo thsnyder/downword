@@ -2,12 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Global mobile optimizations */
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight on iOS/Android */
+  }
+  
+  button, a {
+    touch-action: manipulation; /* Prevents double-tap zoom on buttons/links */
+  }
+  
+  /* Prevent text selection during game interactions */
+  body {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Allow text selection in modals and content areas */
+  .modal, p, li, span:not(.no-select) {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
 @layer components {
+  /* Note: Actual sizing is handled in Board component with Tailwind classes */
+  /* This class is kept for any legacy usage but sizing is component-specific */
   .game-tile {
-    @apply w-12 h-12 sm:w-10 sm:h-10 flex items-center justify-center 
-           text-xl font-bold border-r border-b border-base-300
+    @apply flex items-center justify-center 
+           font-bold border-r border-b border-base-300
            bg-base-200 transition-all duration-300
-           touch-action-none select-none;
+           select-none;
+    touch-action: manipulation; /* Better for mobile - prevents double-tap zoom */
   }
   
   .game-tile:nth-child(10n+1) {
@@ -36,13 +62,20 @@
   }
 
   .letter-bank-tile {
-    @apply btn btn-outline btn-primary w-12 h-12 sm:w-10 sm:h-10 text-lg font-bold
-           touch-action-none select-none;
+    /* Mobile-first: larger buttons for touch (min 44px) */
+    @apply 
+           w-11 h-11 sm:w-10 sm:h-10 md:w-12 md:h-12 
+           select-none min-w-0 rounded-lg
+           font-['Source_Serif_4'] tracking-wide
+           flex items-center justify-center
+           border-2 border-transparent;
+    touch-action: manipulation; /* Prevents double-tap zoom */
   }
 
-  /* Add class to prevent scrolling during touch drag */
-  .touch-dragging {
-    @apply fixed w-full h-full overflow-hidden touch-none;
+  /* Prevent text selection during interactions */
+  .no-select {
+    @apply select-none;
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
   }
 }
 
@@ -59,4 +92,24 @@
     transform: scale(1);
     @apply bg-success/10 border-success;
   }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
 }

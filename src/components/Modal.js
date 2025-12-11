@@ -8,28 +8,63 @@ function Modal({ type, score, words = [], onClose, onShare }) {
         return {
           title: "How to Play DownWord",
           content: (
-            <div className="space-y-4">
-              <p>Create words to reach the goal!</p>
-              <ul className="list-disc list-inside space-y-2">
-                <li>Drag letters from the keyboard to the board</li>
-                <li>Form words horizontally or vertically</li>
-                <li>Words must be at least 2 letters long</li>
-                <li>Connect letters from the start square to the goal square</li>
-                <li>Click Submit when you've reached the goal</li>
+            <div className="space-y-5">
+              <p className="text-lg font-semibold text-base-content/80">Create words to reach the goal! 🎯</p>
+              <ul className="list-none space-y-3">
+                <li className="flex items-start gap-2">
+                  <span className="text-primary text-xl">✨</span>
+                  <span>Tap an empty cell on the board to select it</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary text-xl">✨</span>
+                  <span>Tap a letter from the keyboard to place it in the selected cell</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary text-xl">✨</span>
+                  <span>Form words horizontally or vertically</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary text-xl">✨</span>
+                  <span>Words must be at least 2 letters long</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary text-xl">✨</span>
+                  <span>Connect letters from the start square to the goal square</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary text-xl">✨</span>
+                  <span>Tap Submit when you've reached the goal</span>
+                </li>
               </ul>
-              <p className="font-bold">Scoring:</p>
-              <ul className="list-disc list-inside">
-                <li>1 point per letter</li>
-                <li>+3 bonus for 5+ letter words</li>
-                <li>+5 bonus for 7+ letter words</li>
-                <li>+8 bonus for 9+ letter words</li>
+              <div className="divider"></div>
+              <p className="font-extrabold text-lg bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">Scoring:</p>
+              <ul className="list-none space-y-2">
+                <li className="flex items-center gap-2">
+                  <span className="text-accent font-bold">•</span>
+                  <span>1 point per letter</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-accent font-bold">•</span>
+                  <span>+3 bonus for 5+ letter words</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-accent font-bold">•</span>
+                  <span>+5 bonus for 7+ letter words</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-accent font-bold">•</span>
+                  <span>+8 bonus for 9+ letter words</span>
+                </li>
               </ul>
               <div className="modal-action">
                 <button 
-                  className="btn btn-primary w-full"
-                  onClick={onClose}
+                  className="btn btn-primary w-full min-h-[44px] text-base font-semibold rounded-lg shadow-md hover:shadow-lg active:scale-95 transition-all duration-150"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onClose();
+                  }}
                 >
-                  Play
+                  Let's Play!
                 </button>
               </div>
             </div>
@@ -48,20 +83,22 @@ function Modal({ type, score, words = [], onClose, onShare }) {
           content: (
             <div className="space-y-6">
               <div className="text-center">
-                <p className="text-4xl font-bold text-primary mb-2">{score}</p>
-                <p className="text-xl opacity-75">Final Score</p>
+                <p className="text-5xl sm:text-6xl font-bold text-primary mb-2">
+                  {score}
+                </p>
+                <p className="text-lg font-medium text-base-content/70">Final Score</p>
               </div>
               
               <div className="divider"></div>
               
               <div className="grid grid-cols-2 gap-4 text-center">
-                <div>
-                  <p className="text-2xl font-bold text-secondary">{words.length}</p>
-                  <p className="text-sm opacity-75">Words Found</p>
+                <div className="bg-base-200 p-4 rounded-lg border border-base-300">
+                  <p className="text-3xl font-bold text-secondary">{words.length}</p>
+                  <p className="text-sm font-medium text-base-content/70 mt-1">Words Found</p>
                 </div>
-                <div>
-                  <p className="text-2xl font-bold text-secondary">{stats.longest}</p>
-                  <p className="text-sm opacity-75">Longest Word</p>
+                <div className="bg-base-200 p-4 rounded-lg border border-base-300">
+                  <p className="text-3xl font-bold text-accent">{stats.longest}</p>
+                  <p className="text-sm font-medium text-base-content/70 mt-1">Longest Word</p>
                 </div>
               </div>
 
@@ -79,16 +116,22 @@ function Modal({ type, score, words = [], onClose, onShare }) {
               </div>
 
               <div className="modal-action">
-                <div className="w-full grid grid-cols-2 gap-2">
+                <div className="w-full grid grid-cols-2 gap-3">
                   <button 
-                    className="btn btn-primary"
-                    onClick={() => window.location.reload()}
+                    className="btn btn-primary min-h-[44px] text-base font-semibold rounded-lg shadow-md hover:shadow-lg active:scale-95 transition-all duration-150"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.location.reload();
+                    }}
                   >
                     Play Again
                   </button>
                   <button 
-                    className="btn btn-secondary"
-                    onClick={onShare}
+                    className="btn btn-outline min-h-[44px] text-base font-semibold rounded-lg"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onShare();
+                    }}
                   >
                     Share
                   </button>
@@ -106,17 +149,23 @@ function Modal({ type, score, words = [], onClose, onShare }) {
 
   return (
     <div className="modal modal-open">
-      <div className="modal-box relative">
+      <div className="modal-box relative max-w-[95vw] sm:max-w-md mx-2 sm:mx-auto bg-base-100 shadow-xl border border-base-300 rounded-2xl">
         {type !== 'instructions' && (
           <button 
-            className="btn btn-sm btn-circle absolute right-2 top-2"
-            onClick={onClose}
+            className="btn btn-sm btn-circle absolute right-3 top-3 min-w-[36px] min-h-[36px] bg-base-200 hover:bg-error hover:text-error-content transition-all duration-200 hover:scale-110 active:scale-95 shadow-md"
+            onClick={(e) => {
+              e.preventDefault();
+              onClose();
+            }}
+            aria-label="Close"
           >
             ✕
           </button>
         )}
         
-        <h3 className="font-bold text-lg mb-4 pr-8">{title}</h3>
+        <h3 className="font-bold text-2xl mb-4 pr-8 text-primary">
+          {title}
+        </h3>
         {content}
       </div>
     </div>

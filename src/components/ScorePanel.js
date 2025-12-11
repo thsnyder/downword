@@ -23,14 +23,16 @@ function ScorePanel({ board, startPosition, goalPosition }) {
   const progress = calculateProgress();
 
   return (
-    <div className="card bg-base-100 shadow-lg p-4 mb-4">
-      <div className="w-full bg-base-300 rounded-full h-2 sm:h-4">
+    <div className="card bg-base-100 shadow-lg border border-base-300 p-4 sm:p-5 mb-3 sm:mb-4 rounded-2xl">
+      <div className="w-full bg-base-200 rounded-full h-3 sm:h-4 overflow-hidden">
         <div 
-          className="bg-accent h-2 sm:h-4 rounded-full transition-all duration-500 shadow-[0_0_10px] shadow-accent/50"
+          className="bg-primary h-3 sm:h-4 rounded-full transition-all duration-500 ease-out"
           style={{ width: `${progress}%` }}
         />
       </div>
-      <div className="text-xs text-center mt-1 text-accent">{progress}% to goal</div>
+      <div className="text-sm text-center mt-3 font-semibold text-base-content/70">
+        {progress}% to goal
+      </div>
     </div>
   );
 }

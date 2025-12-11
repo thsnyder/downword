@@ -355,28 +355,55 @@ function WordCheck({ board, onWordSubmit, goalPosition, startPosition, isConnect
   }, [board, goalPosition, startPosition]);
 
   return (
-    <div className="card bg-base-100 shadow-lg mt-4 p-4">
-      <div className="flex justify-between items-center gap-4">
-        <div className="flex-grow min-w-0">
+    <div className="card bg-base-100 shadow-lg border border-base-300 mt-4 p-4 sm:p-5 rounded-2xl">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+        <div className="flex-grow min-w-0 w-full sm:w-auto">
           {invalidCells.length > 0 && (
-            <div className="text-error text-sm">
-              {errorMessage || "Some letters in your path don't form valid words"}
+            <div className="text-error text-sm font-medium bg-error/10 px-3 py-2 rounded-lg border border-error/20 flex items-center gap-2">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span>{errorMessage || "Some letters in your path don't form valid words"}</span>
             </div>
           )}
         </div>
-        <div className="flex-shrink-0 ml-auto flex gap-2">
+        <div className="flex-shrink-0 ml-auto flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <button 
-            className={`btn ${canSubmit ? 'btn-success' : 'btn-disabled'}`}
-            onClick={handleSubmit}
+            className={`btn w-full sm:w-auto min-h-[44px] text-base font-semibold rounded-lg transition-all duration-150 ${
+              canSubmit 
+                ? 'btn-success text-white shadow-md hover:shadow-lg active:scale-95' 
+                : 'btn-disabled opacity-50'
+            }`}
+            onClick={(e) => {
+              e.preventDefault();
+              if (canSubmit && !isGameComplete) {
+                handleSubmit();
+              }
+            }}
             disabled={!canSubmit || isGameComplete}
           >
-            Submit {canSubmit ? '✓' : ''}
+            {canSubmit ? (
+              <>
+                <svg className="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Submit
+              </>
+            ) : (
+              'Submit'
+            )}
           </button>
           {isGameComplete && (
             <button 
-              className="btn btn-primary"
-              onClick={handlePlayAgain}
+              className="btn btn-primary w-full sm:w-auto min-h-[44px] text-base font-semibold rounded-lg shadow-md hover:shadow-lg active:scale-95 transition-all duration-150"
+              onClick={(e) => {
+                e.preventDefault();
+                handlePlayAgain();
+              }}
             >
+              <svg className="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
               Play Again
             </button>
           )}

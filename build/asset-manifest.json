@@ -1,14 +1,14 @@
 {
   "files": {
-    "main.css": "/downword/static/css/main.22c78db9.css",
-    "main.js": "/downword/static/js/main.cde622b0.js",
+    "main.css": "/downword/static/css/main.b15f5cec.css",
+    "main.js": "/downword/static/js/main.c89a8a82.js",
     "static/media/downword-logo.png": "/downword/static/media/downword-logo.4bf537eb3a381fa0afe8.png",
     "index.html": "/downword/index.html",
-    "main.22c78db9.css.map": "/downword/static/css/main.22c78db9.css.map",
-    "main.cde622b0.js.map": "/downword/static/js/main.cde622b0.js.map"
+    "main.b15f5cec.css.map": "/downword/static/css/main.b15f5cec.css.map",
+    "main.c89a8a82.js.map": "/downword/static/js/main.c89a8a82.js.map"
   },
   "entrypoints": [
-    "static/css/main.22c78db9.css",
-    "static/js/main.cde622b0.js"
+    "static/css/main.b15f5cec.css",
+    "static/js/main.c89a8a82.js"
   ]
 }
