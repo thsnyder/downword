@@ -1,0 +1,18 @@
+{
+  "short_name": "DownWord",
+  "name": "DownWord - Word Puzzle Game",
+  "description": "A word puzzle game where players create connected words while navigating from start to finish",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#65c3c8",
+  "background_color": "#faf7f5",
+  "orientation": "portrait-primary"
+}
