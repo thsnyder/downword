@@ -4,7 +4,7 @@ import LetterBank from './components/LetterBank';
 import WordCheck from './components/WordCheck';
 import ScorePanel from './components/ScorePanel';
 import Modal from './components/Modal';
-import { isValidWord, isDictionaryLoaded } from './utils/dictionary';
+import { isDictionaryLoaded } from './utils/dictionary';
 import logo from './images/downword-logo.png';
 
 const BOARD_SIZE = 10;

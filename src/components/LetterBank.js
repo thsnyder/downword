@@ -1,5 +1,5 @@
 import React from 'react';
-import { getRandomLetter, getUniqueRandomLetters } from '../data/letterPool';
+import { getUniqueRandomLetters } from '../data/letterPool';
 
 const KEYBOARD_LAYOUT = [
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],

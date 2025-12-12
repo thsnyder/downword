@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { isValidWord, getWordScore } from '../utils/dictionary';
 
 function WordCheck({ board, onWordSubmit, goalPosition, startPosition, isConnected }) {
@@ -8,7 +8,7 @@ function WordCheck({ board, onWordSubmit, goalPosition, startPosition, isConnect
   const [isGameComplete, setIsGameComplete] = useState(false);
 
   // Get the path cells from start to goal
-  const getPathCells = (board) => {
+  const getPathCells = useCallback((board) => {
     const visited = new Set();
     const queue = [[startPosition.row, startPosition.col]];
     const pathCells = [];
@@ -50,47 +50,14 @@ function WordCheck({ board, onWordSubmit, goalPosition, startPosition, isConnect
     }
     
     return null; // No path found
-  };
+  }, [startPosition, goalPosition]);
 
   // Check if there's a path from start to goal
-  const hasPathToGoal = (board) => {
+  const hasPathToGoal = useCallback((board) => {
     const path = getPathCells(board);
     return path !== null;
-  };
+  }, [getPathCells]);
 
-  // Check if cells are connected to each other
-  const areCellsConnected = (cells) => {
-    if (cells.length === 0) return false;
-    
-    // Create a set of visited cells
-    const visited = new Set();
-    const queue = [cells[0]];
-    visited.add(`${cells[0].row},${cells[0].col}`);
-
-    while (queue.length > 0) {
-      const current = queue.shift();
-      
-      // Check all adjacent cells (including diagonals)
-      for (let dx = -1; dx <= 1; dx++) {
-        for (let dy = -1; dy <= 1; dy++) {
-          if (dx === 0 && dy === 0) continue;
-          
-          const newRow = current.row + dx;
-          const newCol = current.col + dy;
-          const key = `${newRow},${newCol}`;
-          
-          // If this adjacent position is in our cells array and hasn't been visited
-          if (cells.some(cell => cell.row === newRow && cell.col === newCol) && !visited.has(key)) {
-            visited.add(key);
-            queue.push({ row: newRow, col: newCol });
-          }
-        }
-      }
-    }
-
-    // All cells should be visited if they're connected
-    return visited.size === cells.length;
-  };
 
   const findWords = (board, pathCells) => {
     const words = new Set();
@@ -176,7 +143,6 @@ function WordCheck({ board, onWordSubmit, goalPosition, startPosition, isConnect
 
   // Check if all path cells are part of valid words
   const validatePath = (board, pathCells) => {
-    const foundWords = findWords(board, pathCells);
     const validCells = new Set();
     const invalidSequences = [];
     
@@ -301,13 +267,6 @@ function WordCheck({ board, onWordSubmit, goalPosition, startPosition, isConnect
     };
   };
 
-  // Helper function to check if two cells are adjacent (including diagonally)
-  const areAdjacent = (cell1, cell2) => {
-    const rowDiff = Math.abs(cell1.row - cell2.row);
-    const colDiff = Math.abs(cell1.col - cell2.col);
-    return rowDiff <= 1 && colDiff <= 1 && !(rowDiff === 0 && colDiff === 0);
-  };
-
   const handleSubmit = () => {
     const pathCells = getPathCells(board);
     if (!pathCells) return;
@@ -352,7 +311,7 @@ function WordCheck({ board, onWordSubmit, goalPosition, startPosition, isConnect
     setLocalInvalidCells([]);
     // Reset game complete state when board changes
     setIsGameComplete(false);
-  }, [board, goalPosition, startPosition]);
+  }, [board, goalPosition, startPosition, hasPathToGoal]);
 
   return (
     <div className="card bg-base-100 shadow-lg border border-base-300 mt-4 p-4 sm:p-5 rounded-2xl">

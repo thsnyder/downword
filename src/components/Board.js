@@ -2,9 +2,6 @@ import React, { useState, useEffect } from 'react';
 
 const BOARD_SIZE = 10;
 
-// Function to get random column position
-const getRandomColumn = () => Math.floor(Math.random() * BOARD_SIZE);
-
 function Board({ board, highlightedCells = [], onLetterPlaced, onLetterRemoved, startPosition, goalPosition, selectedCell, setSelectedCell }) {
   const [showHints, setShowHints] = useState(true);
   const [justPlaced, setJustPlaced] = useState(null);
