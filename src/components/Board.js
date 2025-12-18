@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const BOARD_SIZE = 10;
+const LONG_PRESS_DURATION = 500; // milliseconds
 
-function Board({ board, highlightedCells = [], onLetterPlaced, onLetterRemoved, startPosition, goalPosition, selectedCell, setSelectedCell }) {
+function Board({ board, highlightedCells = [], onLetterPlaced, onLetterRemoved, startPosition, goalPosition, selectedCell, setSelectedCell, validationFeedback = null }) {
   const [showHints, setShowHints] = useState(true);
   const [justPlaced, setJustPlaced] = useState(null);
+  const longPressTimerRef = useRef(null);
+  const longPressCellRef = useRef(null);
+  const longPressFiredRef = useRef(false);
 
   // Check if any letters have been placed
   useEffect(() => {
@@ -21,6 +25,20 @@ function Board({ board, highlightedCells = [], onLetterPlaced, onLetterRemoved, 
   const getCellClassName = (rowIndex, colIndex) => {
     // Clean card-like tile base - mobile-first sizing (min 44px for touch)
     let baseClasses = "w-11 h-11 sm:w-10 sm:h-10 md:w-12 md:h-12 text-lg sm:text-xl md:text-2xl font-bold rounded-xl flex items-center justify-center select-none transition-all duration-150 font-['Source_Serif_4'] cursor-pointer";
+    
+    // Validation feedback takes priority (temporary green/red highlights)
+    if (validationFeedback) {
+      const isValidCell = validationFeedback.validCells?.some(c => c.row === rowIndex && c.col === colIndex);
+      const isInvalidCell = validationFeedback.invalidCells?.some(c => c.row === rowIndex && c.col === colIndex);
+      
+      if (isValidCell && validationFeedback.valid) {
+        // Valid word cells - green highlight
+        return `${baseClasses} bg-green-100 dark:bg-green-900/30 border-4 border-green-500 text-green-700 dark:text-green-300 shadow-md ring-2 ring-green-400/50`;
+      } else if (isInvalidCell) {
+        // Invalid word cells - red highlight with shake animation
+        return `${baseClasses} bg-red-100 dark:bg-red-900/30 border-4 border-red-500 text-red-700 dark:text-red-300 shadow-md animate-shake ring-2 ring-red-400/50`;
+      }
+    }
     
     // Add selected cell highlighting - clean and clear
     if (selectedCell && selectedCell.row === rowIndex && selectedCell.col === colIndex) {
@@ -40,7 +58,7 @@ function Board({ board, highlightedCells = [], onLetterPlaced, onLetterRemoved, 
     // Get cell content
     const cell = board[rowIndex][colIndex];
     
-    // Invalid word cells - clear error state
+    // Invalid word cells - clear error state (from submit errors)
     if (highlightedCells.some(c => c.row === rowIndex && c.col === colIndex)) {
       return `${baseClasses} bg-red-100 dark:bg-red-900/30 border-2 border-red-400 text-red-700 dark:text-red-300 shadow-sm animate-pulse`;
     }
@@ -63,15 +81,32 @@ function Board({ board, highlightedCells = [], onLetterPlaced, onLetterRemoved, 
     return cell;
   };
 
-  const handleCellClick = (rowIndex, colIndex) => {
+  const handleCellClick = (rowIndex, colIndex, wasLongPress = false) => {
     const cell = board[rowIndex][colIndex];
     
-    if (cell) {
-      // If cell has a letter, remove it
-      if (typeof cell !== 'object' || !cell.locked) {
-        onLetterRemoved(rowIndex, colIndex);
-      }
+    // Check if cell is locked - locked cells should not be selectable or editable
+    // Note: typeof null === 'object' is true in JavaScript, so we must check cell !== null first
+    const isLocked = cell !== null && typeof cell === 'object' && cell.locked;
+    if (isLocked) {
+      return; // Do nothing for locked cells
+    }
+    
+    // If this was a long press on a filled cell, clear it
+    if (wasLongPress && cell) {
+      onLetterRemoved(rowIndex, colIndex);
       setSelectedCell(null);
+      return;
+    }
+    
+    if (cell) {
+      // If cell has a letter and is not locked, select it (don't clear)
+      if (selectedCell && selectedCell.row === rowIndex && selectedCell.col === colIndex) {
+        // Deselect if clicking the same selected cell
+        setSelectedCell(null);
+      } else {
+        // Select the cell (letter remains)
+        setSelectedCell({ row: rowIndex, col: colIndex });
+      }
     } else {
       // If cell is empty, toggle selection
       if (selectedCell && selectedCell.row === rowIndex && selectedCell.col === colIndex) {
@@ -82,6 +117,65 @@ function Board({ board, highlightedCells = [], onLetterPlaced, onLetterRemoved, 
         setSelectedCell({ row: rowIndex, col: colIndex });
       }
     }
+  };
+
+  const handleTouchStart = (rowIndex, colIndex) => {
+    const cell = board[rowIndex][colIndex];
+    // Note: typeof null === 'object' is true in JavaScript, so we must check cell !== null first
+    const isLocked = cell !== null && typeof cell === 'object' && cell.locked;
+    
+    // Reset long press flag
+    longPressFiredRef.current = false;
+    
+    // Only start long-press timer for non-locked cells with letters
+    if (cell && !isLocked) {
+      longPressCellRef.current = { row: rowIndex, col: colIndex };
+      longPressTimerRef.current = setTimeout(() => {
+        // Long press detected - clear the letter
+        if (longPressCellRef.current && 
+            longPressCellRef.current.row === rowIndex && 
+            longPressCellRef.current.col === colIndex) {
+          longPressFiredRef.current = true;
+          handleCellClick(rowIndex, colIndex, true);
+          longPressCellRef.current = null;
+        }
+      }, LONG_PRESS_DURATION);
+    }
+  };
+
+  const handleTouchEnd = (rowIndex, colIndex) => {
+    // Clear long-press timer if it exists (meaning it wasn't a long press)
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    
+    // Only trigger normal click if it wasn't a long press
+    if (!longPressFiredRef.current) {
+      // Check if this was the same cell we were tracking
+      if (longPressCellRef.current && 
+          longPressCellRef.current.row === rowIndex && 
+          longPressCellRef.current.col === colIndex) {
+        // Normal tap - trigger selection
+        handleCellClick(rowIndex, colIndex, false);
+      } else if (!longPressCellRef.current) {
+        // No long press was being tracked (empty cell or locked cell)
+        handleCellClick(rowIndex, colIndex, false);
+      }
+    }
+    
+    longPressCellRef.current = null;
+    longPressFiredRef.current = false;
+  };
+
+  const handleTouchCancel = () => {
+    // Clear long-press timer on touch cancel
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    longPressCellRef.current = null;
+    longPressFiredRef.current = false;
   };
 
   // Watch for new letter placements to trigger animation
@@ -135,8 +229,17 @@ function Board({ board, highlightedCells = [], onLetterPlaced, onLetterRemoved, 
                 className={getCellClassName(rowIndex, colIndex)}
                 onClick={(e) => {
                   e.preventDefault();
-                  handleCellClick(rowIndex, colIndex);
+                  handleCellClick(rowIndex, colIndex, false);
                 }}
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  handleTouchStart(rowIndex, colIndex);
+                }}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  handleTouchEnd(rowIndex, colIndex);
+                }}
+                onTouchCancel={handleTouchCancel}
                 data-cell="true"
                 data-row={rowIndex}
                 data-col={colIndex}

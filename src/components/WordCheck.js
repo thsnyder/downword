@@ -1,11 +1,13 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { isValidWord, getWordScore } from '../utils/dictionary';
 
-function WordCheck({ board, onWordSubmit, goalPosition, startPosition, isConnected }) {
+function WordCheck({ board, onWordSubmit, goalPosition, startPosition, isConnected, onValidationFeedback }) {
   const [canSubmit, setCanSubmit] = useState(false);
   const [invalidCells, setLocalInvalidCells] = useState([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [isGameComplete, setIsGameComplete] = useState(false);
+  const [checkMessage, setCheckMessage] = useState('');
+  const [checkMessageType, setCheckMessageType] = useState(null); // 'success' or 'error'
 
   // Get the path cells from start to goal
   const getPathCells = useCallback((board) => {
@@ -59,7 +61,7 @@ function WordCheck({ board, onWordSubmit, goalPosition, startPosition, isConnect
   }, [getPathCells]);
 
 
-  const findWords = (board, pathCells) => {
+  const findWords = useCallback((board, pathCells) => {
     const words = new Set();
 
     const isHorizontalLine = (cell1, cell2) => {
@@ -139,10 +141,10 @@ function WordCheck({ board, onWordSubmit, goalPosition, startPosition, isConnect
     });
 
     return Array.from(words).map(w => JSON.parse(w));
-  };
+  }, []);
 
   // Check if all path cells are part of valid words
-  const validatePath = (board, pathCells) => {
+  const validatePath = useCallback((board, pathCells) => {
     const validCells = new Set();
     const invalidSequences = [];
     
@@ -265,39 +267,118 @@ function WordCheck({ board, onWordSubmit, goalPosition, startPosition, isConnect
       invalidCells: invalidCells.map(cell => ({ row: cell.row, col: cell.col })),
       invalidWords
     };
-  };
+  }, []);
 
-  const handleSubmit = () => {
+  // Shared validation function used by both "Check Word" and "Submit"
+  // Returns validation result without modifying state or submitting
+  const validateCurrentPath = useCallback((board) => {
     const pathCells = getPathCells(board);
-    if (!pathCells) return;
+    if (!pathCells) {
+      return {
+        valid: false,
+        word: '',
+        cells: [],
+        reason: 'No path found from start to goal',
+        foundWords: [],
+        invalidCells: [],
+        invalidWords: []
+      };
+    }
 
     const foundWords = findWords(board, pathCells);
     if (foundWords.length === 0) {
-      const invalidCellsToHighlight = pathCells.map(cell => ({
-        row: cell.row,
-        col: cell.col
-      }));
-      setLocalInvalidCells(invalidCellsToHighlight);
-      setErrorMessage("No valid words found in path");
-      return;
+      return {
+        valid: false,
+        word: '',
+        cells: pathCells,
+        reason: 'No valid words found in path',
+        foundWords: [],
+        invalidCells: pathCells.map(cell => ({ row: cell.row, col: cell.col })),
+        invalidWords: []
+      };
     }
 
     const { invalidCells, invalidWords } = validatePath(board, pathCells);
     if (invalidCells.length > 0) {
-      const invalidCellsToHighlight = invalidCells.map(cell => ({
-        row: cell.row,
-        col: cell.col
-      }));
-      setLocalInvalidCells(invalidCellsToHighlight);
-      setErrorMessage(`Invalid word${invalidWords.length > 1 ? 's' : ''}: ${invalidWords.join(', ')}`);
+      return {
+        valid: false,
+        word: '',
+        cells: pathCells,
+        reason: `Invalid word${invalidWords.length > 1 ? 's' : ''}: ${invalidWords.join(', ')}`,
+        foundWords: [],
+        invalidCells: invalidCells,
+        invalidWords: invalidWords
+      };
+    }
+
+    // All valid - calculate score
+    const totalScore = foundWords.reduce((sum, { score }) => sum + score, 0);
+    const allPathCells = pathCells.map(cell => ({ row: cell.row, col: cell.col }));
+    
+    return {
+      valid: true,
+      word: foundWords.map(w => w.word).join(', '),
+      cells: allPathCells,
+      reason: `Valid path! Found ${foundWords.length} word${foundWords.length > 1 ? 's' : ''}: ${foundWords.map(w => w.word).join(', ')}`,
+      foundWords: foundWords,
+      invalidCells: [],
+      invalidWords: [],
+      score: totalScore
+    };
+  }, [getPathCells, findWords, validatePath]);
+
+  // Handle "Check Word" - validates without submitting
+  const handleCheckWord = () => {
+    const result = validateCurrentPath(board);
+    
+    // Clear previous check message
+    setCheckMessage('');
+    setCheckMessageType(null);
+    
+    // Provide visual feedback via callback
+    if (onValidationFeedback) {
+      onValidationFeedback({
+        valid: result.valid,
+        validCells: result.valid ? result.cells : [],
+        invalidCells: result.invalidCells
+      });
+    }
+    
+    // Show message
+    if (result.valid) {
+      setCheckMessageType('success');
+      setCheckMessage(result.reason);
+    } else {
+      setCheckMessageType('error');
+      setCheckMessage(result.reason);
+    }
+    
+    // Clear message after 3 seconds
+    setTimeout(() => {
+      setCheckMessage('');
+      setCheckMessageType(null);
+      if (onValidationFeedback) {
+        onValidationFeedback(null); // Clear highlights
+      }
+    }, 3000);
+  };
+
+  const handleSubmit = () => {
+    const result = validateCurrentPath(board);
+    
+    if (!result.valid) {
+      // Show error state
+      setLocalInvalidCells(result.invalidCells);
+      setErrorMessage(result.reason);
       return;
     }
 
-    const totalScore = foundWords.reduce((sum, { score }) => sum + score, 0);
+    // Valid - submit the word
+    const totalScore = result.score || result.foundWords.reduce((sum, { score }) => sum + score, 0);
     setLocalInvalidCells([]);
     setErrorMessage('');
     setIsGameComplete(true);
-    onWordSubmit('', totalScore, [], foundWords);
+    onWordSubmit('', totalScore, [], result.foundWords);
   };
 
   const handlePlayAgain = () => {
@@ -316,7 +397,8 @@ function WordCheck({ board, onWordSubmit, goalPosition, startPosition, isConnect
   return (
     <div className="card bg-base-100 shadow-lg border border-base-300 mt-4 p-4 sm:p-5 rounded-2xl">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-        <div className="flex-grow min-w-0 w-full sm:w-auto">
+        <div className="flex-grow min-w-0 w-full sm:w-auto space-y-2">
+          {/* Error message from submit */}
           {invalidCells.length > 0 && (
             <div className="text-error text-sm font-medium bg-error/10 px-3 py-2 rounded-lg border border-error/20 flex items-center gap-2">
               <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -325,8 +407,48 @@ function WordCheck({ board, onWordSubmit, goalPosition, startPosition, isConnect
               <span>{errorMessage || "Some letters in your path don't form valid words"}</span>
             </div>
           )}
+          {/* Check word feedback message */}
+          {checkMessage && (
+            <div className={`text-sm font-medium px-3 py-2 rounded-lg border flex items-center gap-2 transition-all duration-300 ${
+              checkMessageType === 'success'
+                ? 'text-success bg-success/10 border-success/20'
+                : 'text-error bg-error/10 border-error/20'
+            }`}>
+              {checkMessageType === 'success' ? (
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              )}
+              <span>{checkMessage}</span>
+            </div>
+          )}
         </div>
         <div className="flex-shrink-0 ml-auto flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          {/* Check Word button */}
+          <button 
+            className={`btn btn-outline btn-info w-full sm:w-auto min-h-[44px] text-base font-semibold rounded-lg transition-all duration-150 ${
+              canSubmit && !isGameComplete
+                ? 'shadow-sm hover:shadow-md active:scale-95' 
+                : 'btn-disabled opacity-50'
+            }`}
+            onClick={(e) => {
+              e.preventDefault();
+              if (canSubmit && !isGameComplete) {
+                handleCheckWord();
+              }
+            }}
+            disabled={!canSubmit || isGameComplete}
+          >
+            <svg className="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+            Check Word
+          </button>
+          {/* Submit button */}
           <button 
             className={`btn w-full sm:w-auto min-h-[44px] text-base font-semibold rounded-lg transition-all duration-150 ${
               canSubmit 

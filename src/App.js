@@ -27,6 +27,7 @@ function App() {
   const [selectedCell, setSelectedCell] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [validationFeedback, setValidationFeedback] = useState(null); // { valid: boolean, validCells: [], invalidCells: [] }
 
   // Randomize positions when game starts
   useEffect(() => {
@@ -79,6 +80,9 @@ function App() {
         board: newBoard
       };
     });
+    
+    // Clear selection after placing a letter
+    setSelectedCell(null);
   };
 
   const handleLetterRemoved = (rowIndex, colIndex) => {
@@ -213,6 +217,7 @@ function App() {
           goalPosition={goalPosition}
           selectedCell={selectedCell}
           setSelectedCell={setSelectedCell}
+          validationFeedback={validationFeedback}
         />
         <LetterBank 
           selectedCell={selectedCell}
@@ -224,6 +229,7 @@ function App() {
           goalPosition={goalPosition}
           startPosition={startPosition}
           isConnected={isConnected}
+          onValidationFeedback={setValidationFeedback}
         />
       </main>
 
