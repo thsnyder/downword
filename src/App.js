@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import Board from './components/Board';
 import LetterBank from './components/LetterBank';
 import WordCheck from './components/WordCheck';
-import ScorePanel from './components/ScorePanel';
 import Modal from './components/Modal';
 import { isDictionaryLoaded } from './utils/dictionary';
 import logo from './images/downword-logo.png';
@@ -133,18 +132,13 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen p-2 sm:p-4 bg-base-200">
-      <header className="navbar bg-base-100 rounded-xl shadow-md border border-base-300 mb-4 sm:mb-6 flex-col sm:flex-row gap-2 sm:gap-0 p-3 sm:p-4">
-        <div className="flex w-full sm:w-auto justify-between sm:flex-1 items-center">
-          <img 
-            src={logo} 
-            alt="DownWord" 
-            className="h-8 sm:h-10 w-auto"
-          />
-          
-          <div className="flex items-center gap-2 sm:hidden">
+    <div className="min-h-screen bg-base-200 flex justify-center">
+      <div className="w-full max-w-md md:max-w-2xl p-4 flex flex-col gap-4">
+        {/* Header */}
+        <header className="text-center">
+          <div className="flex items-center justify-between mb-2">
             <button 
-              className="btn btn-circle btn-ghost btn-sm"
+              className="btn btn-circle btn-ghost btn-sm min-w-[44px] min-h-[44px]"
               onClick={() => setSoundEnabled(!soundEnabled)}
               aria-label="Toggle sound"
             >
@@ -159,55 +153,23 @@ function App() {
                 </svg>
               )}
             </button>
+            <h1 className="text-2xl font-extrabold tracking-tight font-['Source_Serif_4'] text-primary flex-1">
+              DownWord
+            </h1>
             <button 
-              className="btn btn-circle btn-ghost btn-sm"
+              className="btn btn-circle btn-ghost btn-sm min-w-[44px] min-h-[44px]"
               onClick={() => setShowModal('instructions')}
               aria-label="How to play"
             >
               <span className="text-lg font-bold">?</span>
             </button>
           </div>
-        </div>
-        
-        {/* Title - shown on all screens */}
-        <div className="flex-1 flex justify-center">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-['Source_Serif_4'] font-bold tracking-wide text-primary">
-            DownWord
-          </h1>
-        </div>
-        
-        <div className="hidden sm:flex flex-1 justify-end items-center gap-2">
-          <button 
-            className="btn btn-circle btn-ghost btn-sm"
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            aria-label="Toggle sound"
-          >
-            {soundEnabled ? (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
-              </svg>
-            )}
-          </button>
-          <button 
-            className="btn btn-ghost btn-sm"
-            onClick={() => setShowModal('instructions')}
-          >
-            <span className="font-medium text-sm">How to Play</span>
-          </button>
-        </div>
-      </header>
-      
-      <main className="max-w-4xl mx-auto px-1 sm:px-2 md:px-4 w-full space-y-4">
-        <ScorePanel 
-          board={gameState.board}
-          startPosition={startPosition}
-          goalPosition={goalPosition}
-        />
+          <p className="mt-1 text-xs sm:text-sm text-base-content/70">
+            Build a path of words from the blue start to the green goal.
+          </p>
+        </header>
+
+        {/* Board */}
         <Board 
           board={gameState.board}
           highlightedCells={gameState.highlightedCells}
@@ -219,10 +181,14 @@ function App() {
           setSelectedCell={setSelectedCell}
           validationFeedback={validationFeedback}
         />
+
+        {/* Letter Bank */}
         <LetterBank 
           selectedCell={selectedCell}
           onLetterPlaced={handleLetterPlaced}
         />
+
+        {/* Action Buttons */}
         <WordCheck 
           board={gameState.board}
           onWordSubmit={handleWordSubmit}
@@ -230,8 +196,10 @@ function App() {
           startPosition={startPosition}
           isConnected={isConnected}
           onValidationFeedback={setValidationFeedback}
+          selectedCell={selectedCell}
+          setSelectedCell={setSelectedCell}
         />
-      </main>
+      </div>
 
       {showModal && (
         <Modal 

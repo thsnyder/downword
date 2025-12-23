@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { isValidWord, getWordScore } from '../utils/dictionary';
 
-function WordCheck({ board, onWordSubmit, goalPosition, startPosition, isConnected, onValidationFeedback }) {
+function WordCheck({ board, onWordSubmit, goalPosition, startPosition, isConnected, onValidationFeedback, selectedCell, setSelectedCell }) {
   const [canSubmit, setCanSubmit] = useState(false);
   const [invalidCells, setLocalInvalidCells] = useState([]);
   const [errorMessage, setErrorMessage] = useState('');
@@ -385,6 +385,12 @@ function WordCheck({ board, onWordSubmit, goalPosition, startPosition, isConnect
     window.location.reload();
   };
 
+  const handleResetSelection = () => {
+    if (setSelectedCell) {
+      setSelectedCell(null);
+    }
+  };
+
   useEffect(() => {
     // Check if there's a path from start to goal
     setCanSubmit(hasPathToGoal(board));
@@ -395,102 +401,119 @@ function WordCheck({ board, onWordSubmit, goalPosition, startPosition, isConnect
   }, [board, goalPosition, startPosition, hasPathToGoal]);
 
   return (
-    <div className="card bg-base-100 shadow-lg border border-base-300 mt-4 p-4 sm:p-5 rounded-2xl">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-        <div className="flex-grow min-w-0 w-full sm:w-auto space-y-2">
-          {/* Error message from submit */}
-          {invalidCells.length > 0 && (
-            <div className="text-error text-sm font-medium bg-error/10 px-3 py-2 rounded-lg border border-error/20 flex items-center gap-2">
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <span>{errorMessage || "Some letters in your path don't form valid words"}</span>
-            </div>
-          )}
-          {/* Check word feedback message */}
-          {checkMessage && (
-            <div className={`text-sm font-medium px-3 py-2 rounded-lg border flex items-center gap-2 transition-all duration-300 ${
-              checkMessageType === 'success'
-                ? 'text-success bg-success/10 border-success/20'
-                : 'text-error bg-error/10 border-error/20'
-            }`}>
-              {checkMessageType === 'success' ? (
-                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              )}
-              <span>{checkMessage}</span>
-            </div>
-          )}
-        </div>
-        <div className="flex-shrink-0 ml-auto flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          {/* Check Word button */}
-          <button 
-            className={`btn btn-outline btn-info w-full sm:w-auto min-h-[44px] text-base font-semibold rounded-lg transition-all duration-150 ${
-              canSubmit && !isGameComplete
-                ? 'shadow-sm hover:shadow-md active:scale-95' 
-                : 'btn-disabled opacity-50'
-            }`}
-            onClick={(e) => {
-              e.preventDefault();
-              if (canSubmit && !isGameComplete) {
-                handleCheckWord();
-              }
-            }}
-            disabled={!canSubmit || isGameComplete}
-          >
-            <svg className="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+    <section className="mt-3 flex flex-col gap-2">
+      {/* Messages */}
+      <div className="space-y-2">
+        {/* Error message from submit */}
+        {invalidCells.length > 0 && (
+          <div className="text-error text-xs sm:text-sm font-medium bg-error/10 px-3 py-2 rounded-lg border border-error/20 flex items-center gap-2">
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            Check Word
-          </button>
-          {/* Submit button */}
-          <button 
-            className={`btn w-full sm:w-auto min-h-[44px] text-base font-semibold rounded-lg transition-all duration-150 ${
-              canSubmit 
-                ? 'btn-success text-white shadow-md hover:shadow-lg active:scale-95' 
-                : 'btn-disabled opacity-50'
-            }`}
-            onClick={(e) => {
-              e.preventDefault();
-              if (canSubmit && !isGameComplete) {
-                handleSubmit();
-              }
-            }}
-            disabled={!canSubmit || isGameComplete}
-          >
-            {canSubmit ? (
-              <>
-                <svg className="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Submit
-              </>
-            ) : (
-              'Submit'
-            )}
-          </button>
-          {isGameComplete && (
-            <button 
-              className="btn btn-primary w-full sm:w-auto min-h-[44px] text-base font-semibold rounded-lg shadow-md hover:shadow-lg active:scale-95 transition-all duration-150"
-              onClick={(e) => {
-                e.preventDefault();
-                handlePlayAgain();
-              }}
-            >
-              <svg className="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <span>{errorMessage || "Some letters in your path don't form valid words"}</span>
+          </div>
+        )}
+        {/* Check word feedback message */}
+        {checkMessage && (
+          <div className={`text-xs sm:text-sm font-medium px-3 py-2 rounded-lg border flex items-center gap-2 transition-all duration-300 ${
+            checkMessageType === 'success'
+              ? 'text-success bg-success/10 border-success/20'
+              : 'text-error bg-error/10 border-error/20'
+          }`}>
+            {checkMessageType === 'success' ? (
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              Play Again
-            </button>
-          )}
-        </div>
+            ) : (
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            )}
+            <span>{checkMessage}</span>
+          </div>
+        )}
       </div>
-    </div>
+
+      {/* Action Buttons */}
+      <div className="flex flex-col sm:flex-row gap-2">
+        <button 
+          className={`btn btn-outline btn-info w-full min-h-[44px] text-sm sm:text-base font-semibold rounded-lg transition-all duration-150 ${
+            canSubmit && !isGameComplete
+              ? 'shadow-sm hover:shadow-md active:scale-95' 
+              : 'btn-disabled opacity-50'
+          }`}
+          onClick={(e) => {
+            e.preventDefault();
+            if (canSubmit && !isGameComplete) {
+              handleCheckWord();
+            }
+          }}
+          disabled={!canSubmit || isGameComplete}
+        >
+          <svg className="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+          </svg>
+          Check Word
+        </button>
+        <button 
+          className={`btn btn-primary w-full min-h-[44px] text-sm sm:text-base font-semibold rounded-lg transition-all duration-150 ${
+            canSubmit 
+              ? 'shadow-md hover:shadow-lg active:scale-95' 
+              : 'btn-disabled opacity-50'
+          }`}
+          onClick={(e) => {
+            e.preventDefault();
+            if (canSubmit && !isGameComplete) {
+              handleSubmit();
+            }
+          }}
+          disabled={!canSubmit || isGameComplete}
+        >
+          {canSubmit ? (
+            <>
+              <svg className="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Confirm Word
+            </>
+          ) : (
+            'Confirm Word'
+          )}
+        </button>
+      </div>
+
+      {/* Reset Selection Button */}
+      {selectedCell && (
+        <button 
+          className="btn btn-ghost w-full min-h-[44px] text-sm sm:text-base font-medium rounded-lg transition-all duration-150 active:scale-95"
+          onClick={(e) => {
+            e.preventDefault();
+            handleResetSelection();
+          }}
+        >
+          <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          Reset Selection
+        </button>
+      )}
+
+      {/* Play Again Button */}
+      {isGameComplete && (
+        <button 
+          className="btn btn-primary w-full min-h-[44px] text-sm sm:text-base font-semibold rounded-lg shadow-md hover:shadow-lg active:scale-95 transition-all duration-150"
+          onClick={(e) => {
+            e.preventDefault();
+            handlePlayAgain();
+          }}
+        >
+          <svg className="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Play Again
+        </button>
+      )}
+    </section>
   );
 }
 

@@ -23,8 +23,8 @@ function Board({ board, highlightedCells = [], onLetterPlaced, onLetterRemoved, 
   }, [board, showHints]);
 
   const getCellClassName = (rowIndex, colIndex) => {
-    // Clean card-like tile base - mobile-first sizing (min 44px for touch)
-    let baseClasses = "w-11 h-11 sm:w-10 sm:h-10 md:w-12 md:h-12 text-lg sm:text-xl md:text-2xl font-bold rounded-xl flex items-center justify-center select-none transition-all duration-150 font-['Source_Serif_4'] cursor-pointer";
+    // Mobile-first: aspect-square ensures cells stay square, responsive text sizes
+    let baseClasses = "aspect-square flex items-center justify-center text-xs sm:text-sm md:text-base font-bold rounded-md select-none transition-all duration-150 font-['Source_Serif_4'] cursor-pointer min-w-[44px] min-h-[44px]";
     
     // Validation feedback takes priority (temporary green/red highlights)
     if (validationFeedback) {
@@ -33,26 +33,26 @@ function Board({ board, highlightedCells = [], onLetterPlaced, onLetterRemoved, 
       
       if (isValidCell && validationFeedback.valid) {
         // Valid word cells - green highlight
-        return `${baseClasses} bg-green-100 dark:bg-green-900/30 border-4 border-green-500 text-green-700 dark:text-green-300 shadow-md ring-2 ring-green-400/50`;
+        return `${baseClasses} bg-green-100 dark:bg-green-900/30 border-2 border-green-500 text-green-700 dark:text-green-300 shadow-md ring-2 ring-green-400/50 active:scale-95`;
       } else if (isInvalidCell) {
         // Invalid word cells - red highlight with shake animation
-        return `${baseClasses} bg-red-100 dark:bg-red-900/30 border-4 border-red-500 text-red-700 dark:text-red-300 shadow-md animate-shake ring-2 ring-red-400/50`;
+        return `${baseClasses} bg-red-100 dark:bg-red-900/30 border-2 border-red-500 text-red-700 dark:text-red-300 shadow-md animate-shake ring-2 ring-red-400/50 active:scale-95`;
       }
     }
     
     // Add selected cell highlighting - clean and clear
     if (selectedCell && selectedCell.row === rowIndex && selectedCell.col === colIndex) {
-      return `${baseClasses} bg-primary text-primary-content border-2 border-primary shadow-lg shadow-primary/30 ring-2 ring-primary/20 scale-105`;
+      return `${baseClasses} bg-primary text-primary-content border-2 border-primary shadow-lg ring-2 ring-primary/50 active:scale-95`;
     }
     
     // Start position - distinct blue
     if (rowIndex === startPosition.row && colIndex === startPosition.col) {
-      return `${baseClasses} bg-blue-500 text-white border-2 border-blue-600 shadow-md font-extrabold`;
+      return `${baseClasses} bg-blue-500 text-white border-2 border-blue-600 shadow-md font-extrabold active:scale-95`;
     }
     
     // Goal position - distinct green
     if (rowIndex === goalPosition.row && colIndex === goalPosition.col) {
-      return `${baseClasses} bg-green-500 text-white border-2 border-green-600 shadow-md font-extrabold`;
+      return `${baseClasses} bg-green-500 text-white border-2 border-green-600 shadow-md font-extrabold active:scale-95`;
     }
     
     // Get cell content
@@ -60,17 +60,17 @@ function Board({ board, highlightedCells = [], onLetterPlaced, onLetterRemoved, 
     
     // Invalid word cells - clear error state (from submit errors)
     if (highlightedCells.some(c => c.row === rowIndex && c.col === colIndex)) {
-      return `${baseClasses} bg-red-100 dark:bg-red-900/30 border-2 border-red-400 text-red-700 dark:text-red-300 shadow-sm animate-pulse`;
+      return `${baseClasses} bg-red-100 dark:bg-red-900/30 border-2 border-red-400 text-red-700 dark:text-red-300 shadow-sm animate-pulse active:scale-95`;
     }
     
     // Empty cell - clean, subtle, tappable
     if (!cell) {
-      return `${baseClasses} bg-base-200 dark:bg-base-300 border-2 border-base-300 dark:border-base-400 text-base-content/30 hover:bg-base-300 dark:hover:bg-base-400 hover:border-primary/30 active:scale-95`;
+      return `${baseClasses} bg-base-100 border border-base-300 text-base-content/30 hover:bg-base-200 active:scale-95 active:bg-base-200`;
     } else {
       // Cell with letter - elevated card with high contrast
       const wasJustPlaced = justPlaced === `${rowIndex}-${colIndex}`;
-      return `${baseClasses} bg-white dark:bg-base-100 border-2 border-base-300 dark:border-base-400 text-base-content shadow-md hover:shadow-lg active:scale-95 font-extrabold ${
-        wasJustPlaced ? 'animate-pulse scale-110' : ''
+      return `${baseClasses} bg-white dark:bg-base-100 border border-base-300 text-base-content shadow-sm hover:shadow-md active:scale-95 font-extrabold ${
+        wasJustPlaced ? 'animate-pulse scale-105' : ''
       }`;
     }
   };
@@ -187,70 +187,36 @@ function Board({ board, highlightedCells = [], onLetterPlaced, onLetterRemoved, 
   }, [board, selectedCell]);
 
   return (
-    <div className="card bg-base-100 shadow-lg border border-base-300 p-4 sm:p-5 md:p-6 rounded-2xl">
-      <div className="mx-auto w-full max-w-[100vw] sm:max-w-md md:max-w-lg">
-        <div className="grid gap-1.5 sm:gap-2 relative" style={{ gridTemplateColumns: `repeat(${BOARD_SIZE}, minmax(0, 1fr))` }}>
-          {/* Start hint toast */}
-          {showHints && (
-            <>
-              <div 
-                className="absolute text-xs bg-blue-500 text-white px-3 py-1.5 rounded-lg shadow-md font-semibold"
-                style={{ 
-                  left: `${startPosition.col * (100/BOARD_SIZE)}%`, 
-                  bottom: '100%',
-                  transform: 'translateX(-25%)',
-                  marginBottom: '6px',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                Start ↓
-              </div>
-              
-              {/* Goal hint toast */}
-              <div 
-                className="absolute text-xs bg-green-500 text-white px-3 py-1.5 rounded-lg shadow-md font-semibold"
-                style={{ 
-                  left: `${goalPosition.col * (100/BOARD_SIZE)}%`, 
-                  top: '100%',
-                  transform: 'translateX(-25%)',
-                  marginTop: '6px',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                ↑ Goal
-              </div>
-            </>
-          )}
-          
-          {board.map((row, rowIndex) => (
-            row.map((cell, colIndex) => (
-              <button
-                key={`${rowIndex}-${colIndex}`}
-                className={getCellClassName(rowIndex, colIndex)}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleCellClick(rowIndex, colIndex, false);
-                }}
-                onTouchStart={(e) => {
-                  e.preventDefault();
-                  handleTouchStart(rowIndex, colIndex);
-                }}
-                onTouchEnd={(e) => {
-                  e.preventDefault();
-                  handleTouchEnd(rowIndex, colIndex);
-                }}
-                onTouchCancel={handleTouchCancel}
-                data-cell="true"
-                data-row={rowIndex}
-                data-col={colIndex}
-              >
-                {getCellContent(cell)}
-              </button>
-            ))
-          ))}
-        </div>
+    <section className="flex justify-center">
+      <div className="grid grid-cols-10 gap-1 sm:gap-1.5 bg-base-300 p-2 sm:p-3 rounded-xl shadow-md w-full max-w-xs sm:max-w-sm md:max-w-md">
+        {board.map((row, rowIndex) => 
+          row.map((cell, colIndex) => (
+            <button
+              key={`${rowIndex}-${colIndex}`}
+              className={getCellClassName(rowIndex, colIndex)}
+              onClick={(e) => {
+                e.preventDefault();
+                handleCellClick(rowIndex, colIndex, false);
+              }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                handleTouchStart(rowIndex, colIndex);
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                handleTouchEnd(rowIndex, colIndex);
+              }}
+              onTouchCancel={handleTouchCancel}
+              data-cell="true"
+              data-row={rowIndex}
+              data-col={colIndex}
+            >
+              {getCellContent(cell)}
+            </button>
+          ))
+        )}
       </div>
-    </div>
+    </section>
   );
 }
 
